@@ -335,11 +335,17 @@ class EigenGate(raw_types.Gate):
         return protocols.trace_distance_from_angle_list(angles)
 
     def _has_unitary_(self) -> bool:
-        return not self._is_parameterized_()
+        return True #not self._is_parameterized_()
 
-    def _unitary_(self) -> Union[np.ndarray, NotImplementedType]:
+    def _unitary_(self, request_sympy_matrix=False) -> Union[np.ndarray, NotImplementedType]:
         if self._is_parameterized_():
-            return NotImplemented
+            if request_sympy_matrix:
+                return sum([
+                    sympy.Matrix(component * 1j ** (2 * self._exponent * (half_turns + self._global_shift)))
+                    for half_turns, component in self._eigen_components()
+                ], sympy.zeros(2**self._num_qubits_(), 2**self._num_qubits_()))
+            else:
+                return NotImplemented
         e = cast(float, self._exponent)
         return np.sum(
             [
